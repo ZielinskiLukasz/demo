@@ -27,8 +27,6 @@ liip_monitor:
         readable_directory: ['%kernel.cache_dir%', '%kernel.logs_dir%']
         writable_directory: ['%kernel.cache_dir%', '%kernel.logs_dir%']
         symfony_version:    ~
-        security_advisory:
-            lock_file:      '%kernel.project_dir%/composer.lock'
         php_flags:
             session.auto_start: false
             short_open_tag: false

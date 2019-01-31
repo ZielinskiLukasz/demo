@@ -26,6 +26,8 @@ docker-compose exec client yarn jest --ci --reporters=default --reporters=jest-j
 docker-compose exec client yarn eslint src features
 docker-compose exec client yarn e2e
 docker-compose exec client rm -rf build
+docker-compose exec php bin/console api:swagger:export > client/swagger.json
+docker-compose exec client swagger-cli validate swagger.json
 curl -s http://localhost # Client
 curl -s http://localhost:81 # Admin
 curl -s http://localhost:8080 # API
