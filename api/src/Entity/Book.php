@@ -95,7 +95,7 @@ class Book
     public $publicationDate;
 
     /**
-     * @var Collection|ArrayCollection|Review[] The book's reviews
+     * @var ArrayCollection|Collection|Review[] The book's reviews
      *
      * @ORM\OneToMany(targetEntity=Review::class, mappedBy="book", orphanRemoval=true, cascade={"persist", "remove"})
      * @Groups("book:read")
