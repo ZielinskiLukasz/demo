@@ -113,51 +113,51 @@ jobs:
       - store_artifacts:
           path: api/var/log
 
-#  phpunit:
-#    executor: php-executor
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - api-{{ .Environment.CIRCLE_SHA1 }}
-#      - run:
-#          name: PHPUnit
-#          working_directory: api
-#          command: vendor/bin/phpunit --log-junit coverage/junit.xml
-#      - store_test_results:
-#          path: api/coverage
+  phpunit:
+    executor: php-executor
+    steps:
+      - restore_cache:
+          keys:
+            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: PHPUnit
+          working_directory: api
+          command: bin/phpunit --log-junit coverage/junit.xml
+      - store_test_results:
+          path: api/coverage
 
-#  monitor_health:
-#    executor: php-executor
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - api-{{ .Environment.CIRCLE_SHA1 }}
-#      - run:
-#          name: Monitor health
-#          working_directory: api
-#          command: bin/console monitor:health
+  monitor_health:
+    executor: php-executor
+    steps:
+      - restore_cache:
+          keys:
+            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Monitor health
+          working_directory: api
+          command: bin/console monitor:health
 
-#  php_cs_fixer:
-#    executor: php-executor
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - api-{{ .Environment.CIRCLE_SHA1 }}
-#      - run:
-#          name: PHP CS fixer
-#          working_directory: api
-#          command: vendor/bin/php-cs-fixer fix --dry-run --ansi --verbose
+  php_cs_fixer:
+    executor: php-executor
+    steps:
+      - restore_cache:
+          keys:
+            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: PHP CS fixer
+          working_directory: api
+          command: vendor/bin/php-cs-fixer fix --dry-run --ansi --verbose
 
-#  phpstan:
-#    executor: php-executor
-#    steps:
-#      - restore_cache:
-#          keys:
-#            - api-{{ .Environment.CIRCLE_SHA1 }}
-#      - run:
-#          name: PHPStan
-#          working_directory: api
-#          command: vendor/bin/phpstan analyse -l 0 src
+  phpstan:
+    executor: php-executor
+    steps:
+      - restore_cache:
+          keys:
+            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: PHPStan
+          working_directory: api
+          command: vendor/bin/phpstan analyse -c phpstan.neon.dist -l6 --ansi src tests
 
   swagger_validator:
     executor: client-executor
@@ -281,18 +281,18 @@ workflows:
       - doctrine_schema_validator:
           requires:
             - init-api
-#      - phpunit:
-#          requires:
-#            - init-api
-#      - monitor_health:
-#          requires:
-#            - init-api
-#      - php_cs_fixer:
-#          requires:
-#            - init-api
-#      - phpstan:
-#          requires:
-#            - init-api
+      - phpunit:
+          requires:
+            - init-api
+      - monitor_health:
+          requires:
+            - init-api
+      - php_cs_fixer:
+          requires:
+            - init-api
+      - phpstan:
+          requires:
+            - init-api
       - behat:
           requires:
             - init-api
@@ -317,10 +317,10 @@ workflows:
             - doctrine_schema_validator
             - behat
             - swagger_validator
-#            - phpunit
-#            - monitor_health
-#            - php_cs_fixer
-#            - phpstan
+            - phpunit
+            - monitor_health
+            - php_cs_fixer
+            - phpstan
             - jest
             - e2e
             - eslint

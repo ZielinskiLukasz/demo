@@ -1,0 +1,6 @@
+liip_monitor:
+    checks:
+        doctrine_dbal: default
+        doctrine_migrations:
+            migrations_with_doctrine_bundle: 
+                connection: default
