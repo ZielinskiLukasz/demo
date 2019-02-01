@@ -108,7 +108,7 @@ jobs:
       - run:
           name: Behat
           working_directory: api
-          command: vendor/bin/behat --format=progress
+          command: phpdbg -qrr vendor/bin/behat --format=progress
       - store_artifacts:
           path: api/var/log
 
