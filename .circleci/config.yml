@@ -23,7 +23,7 @@ executors:
 
   deploy-executor:
     docker:
-      - image: lachlanevenson/k8s-kubectl:v1.13.2
+      - image: google/cloud-sdk:slim
 
 jobs:
   # API
@@ -262,7 +262,10 @@ jobs:
           name: Deploy
           command: |
             source ci/.env
-            if [[ $REPOSITORY == $CIRCLE_PROJECT_REPONAME && $CURRENT_CI == "circleci" ]] && [[ $FEATURE_DEPLOY == "1" || $DEPLOYMENT_BRANCH == $CIRCLE_BRANCH ]]; then
+            if [[ $REPOSITORY == $(echo $CIRCLE_REPOSITORY_URL | sed -E 's/^[^:]+:(.*)\.git/\1/g') && $CURRENT_CI == "circleci" ]] && [[ $FEATURE_DEPLOY == "1" || $DEPLOYMENT_BRANCH == $CIRCLE_BRANCH ]]; then
+              BRANCH=$CIRCLE_BRANCH
+              curl -sL https://deb.nodesource.com/setup_10.x | bash -
+              apt install nodejs
               source ci/before_deploy
               ci/deploy
             else
@@ -304,9 +307,9 @@ workflows:
       - jest:
          requires:
             - init-client
-      - e2e:
-          requires:
-            - init-client
+#      - e2e:
+#          requires:
+#            - init-client
       - eslint:
           requires:
             - init-client
@@ -322,5 +325,5 @@ workflows:
             - php_cs_fixer
             - phpstan
             - jest
-            - e2e
+#            - e2e
             - eslint
