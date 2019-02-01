@@ -232,11 +232,14 @@ jobs:
               ./yq_linux_amd64 delete -i docker-compose.yml "services.$line.volumes"
             done
             ./yq_linux_amd64 delete -i docker-compose.yml "volumes"
+            if [ ! -z $CI_SERVICE_ACCOUNT_KEY ]; then
+              echo -n $CI_SERVICE_ACCOUNT_KEY | base64 -d | docker login -u _json_key --password-stdin https://eu.gcr.io
+              source ci/.env
+              sed -i -E 's@CONTAINER_REGISTRY_BASE=.*@CONTAINER_REGISTRY_BASE='"$DOCKER_REPOSITORY"'@g' .env
+            fi
             docker-compose pull --ignore-pull-failures
             docker-compose build --pull
             docker-compose up -d
-            echo "Waiting for PHP container to be up and ready..."
-            # todo Change to "dockerize" or "until"
             sleep 10
       - run:
           name: Run tests
@@ -256,6 +259,7 @@ jobs:
           keys:
             - node_modules-{{ checksum "client/yarn.lock" }}
       - deploy:
+          name: Deploy
           command: |
             source ci/.env
             if [[ $REPOSITORY == $CIRCLE_PROJECT_REPONAME && $CURRENT_CI == "circleci" ]] && [[ $FEATURE_DEPLOY == "1" || $DEPLOYMENT_BRANCH == $CIRCLE_BRANCH ]]; then
