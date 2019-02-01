@@ -39,29 +39,27 @@ jobs:
           name: Install dependencies
           working_directory: api
           command: composer install --prefer-dist --no-progress --no-suggest --no-interaction
-      - run:
-          name: Build swagger documentation
-          working_directory: api
-          command: bin/console api:swagger:export > swagger.json
       - save_cache:
           paths:
             - api/vendor
           key: vendor-{{ checksum "api/composer.lock" }}
-      - save_cache:
+      - run:
+          name: Build swagger documentation
+          working_directory: api
+          command: bin/console api:swagger:export > swagger.json
+      - store_artifacts:
+          path: api/swagger.json
+          destination: swagger.json
+      - persist_to_workspace:
+          root: ./
           paths:
             - ./api
-          key: api-{{ .Environment.CIRCLE_SHA1 }}
-      - save_cache:
-          paths:
-            - ./ci
-          key: ci-{{ .Environment.CIRCLE_SHA1 }}
 
   security_checker:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Security checker
           working_directory: api
@@ -70,9 +68,8 @@ jobs:
   doctrine_schema_validator:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Doctrine schema validator
           working_directory: api
@@ -95,9 +92,8 @@ jobs:
           PUBLISH_ALLOWED_ORIGINS: http://mercure
           DEMO: 1
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Prepare environment
           working_directory: api
@@ -115,9 +111,8 @@ jobs:
   phpunit:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: PHPUnit
           working_directory: api
@@ -128,9 +123,8 @@ jobs:
   monitor_health:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Monitor health
           working_directory: api
@@ -139,9 +133,8 @@ jobs:
   php_cs_fixer:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: PHP CS fixer
           working_directory: api
@@ -150,9 +143,8 @@ jobs:
   phpstan:
     executor: php-executor
     steps:
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: PHPStan
           working_directory: api
@@ -163,9 +155,8 @@ jobs:
     steps:
       - run:
           command: apk add ca-certificates
-      - restore_cache:
-          keys:
-            - api-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Install swagger-cli
           command: yarn global add swagger-cli
@@ -173,9 +164,6 @@ jobs:
           name: Swagger validator
           working_directory: api
           command: swagger-cli validate swagger.json
-      - store_artifacts:
-          path: api/swagger.json
-          destination: swagger.json
 
   # Client
   init-client:
@@ -196,10 +184,10 @@ jobs:
           paths:
             - client/node_modules
           key: node_modules-{{ checksum "client/yarn.lock" }}
-      - save_cache:
+      - persist_to_workspace:
+          root: ./
           paths:
             - ./client
-          key: client-{{ .Environment.CIRCLE_SHA1 }}
 
   jest:
     executor: client-executor
@@ -208,9 +196,8 @@ jobs:
     steps:
       - run:
           command: apk add ca-certificates
-      - restore_cache:
-          keys:
-            - client-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: Jest
           working_directory: client
@@ -223,9 +210,8 @@ jobs:
     steps:
       - run:
           command: apk add ca-certificates
-      - restore_cache:
-          keys: 
-            - client-{{ .Environment.CIRCLE_SHA1 }}
+      - attach_workspace:
+          at: ./
       - run:
           name: ESLint
           working_directory: client
@@ -250,6 +236,7 @@ jobs:
             docker-compose build --pull
             docker-compose up -d
             echo "Waiting for PHP container to be up and ready..."
+            # todo Change to "dockerize" or "until"
             sleep 10
       - run:
           name: Run tests
@@ -259,14 +246,16 @@ jobs:
   deploy:
     executor: deploy-executor
     steps:
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
       - checkout
       - restore_cache:
           keys:
             - vendor-{{ checksum "api/composer.lock" }}
-            - vendor-
-      - run:
-          name: Deploy
+      - restore_cache:
+          keys:
+            - node_modules-{{ checksum "client/yarn.lock" }}
+      - deploy:
           command: |
             source ci/.env
             if [[ $REPOSITORY == $CIRCLE_PROJECT_REPONAME && $CURRENT_CI == "circleci" ]] && [[ $FEATURE_DEPLOY == "1" || $DEPLOYMENT_BRANCH == $CIRCLE_BRANCH ]]; then
